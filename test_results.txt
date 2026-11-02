@@ -1,0 +1,64 @@
+Lab 1 test run
+
+All results below were transcribed from the real terminal sessions
+(client_terminal.png, server_terminal.png) taken in the same run as the
+Wireshark capture (lab1.pcap). The client source ports in the server log
+(58948, 58955, 58963, 58968) match the source ports in lab1.pcap.
+
+
+1. Main tests
+
+Client output (each line after the prompt is what was typed):
+
+Enter a message: Cnetwork
+Reply: eknortw
+Enter a message: Anetwork
+Reply: wtronke
+Enter a message: Dhello Network
+Reply: HELLO NETWORK
+Enter a message: Xhello
+Reply: Xhello
+
+Server output:
+
+Server is running on port 5050
+('127.0.0.1', 58948): Cnetwork -> eknortw
+('127.0.0.1', 58955): Anetwork -> wtronke
+('127.0.0.1', 58963): Dhello Network -> HELLO NETWORK
+('127.0.0.1', 58968): Xhello -> Xhello
+
+
+2. Edge cases (separate server run, not part of lab1.pcap)
+
+Client output:
+
+Enter a message: anetwork
+Reply: anetwork
+Enter a message: Cnetwork
+Reply: eknortw
+Enter a message: CnEtWork
+Reply: EWknort
+
+Server output:
+
+Server is running on port 5050
+('127.0.0.1', 59203): anetwork -> anetwork
+('127.0.0.1', 59211): Cnetwork -> eknortw
+('127.0.0.1', 59219): CnEtWork -> EWknort
+
+Observations:
+- "anetwork": a lowercase first letter is not one of A, C, D, so the message
+  is returned unchanged (rule f).
+- "CnEtWork" -> "EWknort": the server sorts by character code, so uppercase
+  letters come before lowercase letters.
+- Empty message (just pressing Enter): the client sends zero bytes and then
+  waits in recv() for a reply, while the server waits in recv() for data.
+  Both block. After pressing Ctrl+C in the client, its socket closes, the
+  server's recv() returns an empty string, and the server crashes:
+
+    File "echo_server.py", line 8, in transform
+      command = message[0]
+    IndexError: string index out of range
+
+  Known limitation: empty input is not handled, and the server stops
+  because the error is not caught.
